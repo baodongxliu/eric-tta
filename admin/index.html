@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin · Eric Table Tennis</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <h1>Admin dashboard</h1>
+          <p>Club overview and quick actions</p>
+        </div>
+        <span class="live-pill" id="live-pill" title="Updates automatically">
+          <span class="live-dot"></span>
+          <span id="live-label">Live</span>
+        </span>
+      </div>
+
+      <section class="cards-grid">
+        <div class="card">
+          <div class="card-title">Total students</div>
+          <div class="card-stat" id="kpi-students">—</div>
+          <div class="card-sub">Registered accounts</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active memberships</div>
+          <div class="card-stat" id="kpi-active">—</div>
+          <div class="card-sub" id="kpi-active-sub">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Lessons logged today</div>
+          <div class="card-stat" id="kpi-today">—</div>
+          <div class="card-sub" id="kpi-today-sub">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Need attention</div>
+          <div class="card-stat" id="kpi-attention">—</div>
+          <div class="card-sub">Expiring or low balance</div>
+        </div>
+      </section>
+
+      <section style="margin-top: 24px">
+        <h2>Quick actions</h2>
+        <div class="actions-grid">
+          <a class="action-tile action-accent" href="./log-membership.html">＋ Log membership</a>
+          <a class="action-tile action-accent" href="./log-purchase.html">＋ Log bulk lessons</a>
+          <a class="action-tile action-accent" href="./log-used.html">＋ Log lesson used</a>
+          <a class="action-tile" href="./students.html">Manage students</a>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 24px">
+        <h2>Expiring within 14 days</h2>
+        <div id="expiring"></div>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>Low lesson balances</h2>
+        <p class="card-sub" style="margin-bottom: 12px">
+          Students with under 2 hours remaining for either type.
+        </p>
+        <div id="low-balances"></div>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>Today's lessons</h2>
+        <div id="today-lessons"></div>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>Recent activity</h2>
+        <div id="recent"></div>
+      </section>
+    </main>
+    <script type="module" src="../js/pages/admin-dashboard.js"></script>
+  </body>
+</html>

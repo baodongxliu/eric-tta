@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>History · Eric Table Tennis</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <h1>Activity history</h1>
+          <p>Memberships, purchased lesson hours, and lessons used.</p>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="field">
+          <label class="label" for="from">From</label>
+          <input class="input" type="date" id="from" />
+        </div>
+        <div class="field">
+          <label class="label" for="to">To</label>
+          <input class="input" type="date" id="to" />
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="today-btn" type="button">Today only</button>
+          <button class="btn btn-ghost" id="clear-btn" type="button">Clear</button>
+        </div>
+        <div class="btn-row" id="type-filters">
+          <button class="chip" data-type="all" type="button">All</button>
+          <button class="chip" data-type="membership" type="button">Membership</button>
+          <button class="chip" data-type="purchase" type="button">Purchase</button>
+          <button class="chip" data-type="used" type="button">Lesson used</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="results"></div>
+      </div>
+    </main>
+    <script type="module" src="./js/pages/history.js"></script>
+  </body>
+</html>

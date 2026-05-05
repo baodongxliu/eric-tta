@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Register · Eric Table Tennis</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <div class="auth-card">
+        <span class="brand-mark">ETT</span>
+        <h1>Create your account</h1>
+        <p class="auth-sub">Track your membership and lesson balance</p>
+        <form id="register-form" class="form">
+          <div class="field">
+            <label class="label" for="displayName">Full name</label>
+            <input class="input" id="displayName" type="text" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label class="label" for="email">Email</label>
+            <input class="input" id="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label class="label" for="password">Password</label>
+            <input
+              class="input"
+              id="password"
+              type="password"
+              autocomplete="new-password"
+              minlength="6"
+              required
+            />
+            <span class="field-help">At least 6 characters.</span>
+          </div>
+          <div id="error" class="field-error" hidden></div>
+          <button class="btn btn-block" type="submit" id="submit-btn">Create account</button>
+        </form>
+        <p class="auth-foot">Already have an account? <a href="./index.html">Sign in</a></p>
+      </div>
+    </div>
+    <script type="module" src="./js/pages/register.js"></script>
+  </body>
+</html>

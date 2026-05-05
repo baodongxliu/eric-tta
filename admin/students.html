@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Students · Eric Table Tennis</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <h1>Students</h1>
+          <p>All registered students and their balances.</p>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2>Family groups</h2>
+        <p class="card-sub" style="margin-bottom: 12px">
+          Group 2–4 students under one family-tier membership.
+        </p>
+        <div id="groups-list"></div>
+
+        <form id="group-form" class="form" style="margin-top: 16px">
+          <div class="field">
+            <label class="label" for="group-name">New group name</label>
+            <input class="input" id="group-name" type="text" placeholder="e.g. Liu Family" required />
+          </div>
+          <div class="field">
+            <label class="label">Members (pick 2–4)</label>
+            <div id="group-members" class="btn-row"></div>
+          </div>
+          <div>
+            <button class="btn" type="submit">Create family group</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>All students</h2>
+        <div class="filter-bar" style="margin-top: 8px">
+          <div class="field" style="flex: 1; min-width: 220px">
+            <label class="label" for="search">Search</label>
+            <input class="input" id="search" type="text" placeholder="Name or email" />
+          </div>
+        </div>
+        <div id="students-list"></div>
+      </section>
+
+      <dialog id="edit-dialog" class="modal" aria-labelledby="edit-title">
+        <form id="edit-form" class="form">
+          <h2 id="edit-title">Edit student</h2>
+          <p class="card-sub" id="edit-email"></p>
+          <div class="field">
+            <label class="label" for="edit-name">Display name</label>
+            <input class="input" id="edit-name" type="text" required />
+          </div>
+          <div class="field">
+            <label class="label" for="edit-group">Family group</label>
+            <select class="select" id="edit-group">
+              <option value="">— none —</option>
+            </select>
+            <span class="field-help">Family-tier memberships apply to everyone in the group.</span>
+          </div>
+          <div id="edit-error" class="field-error" hidden></div>
+          <div class="btn-row">
+            <button class="btn" type="submit" id="edit-save">Save</button>
+            <button class="btn btn-ghost" type="button" id="edit-cancel">Cancel</button>
+          </div>
+        </form>
+      </dialog>
+    </main>
+    <script type="module" src="../js/pages/admin-students.js"></script>
+  </body>
+</html>

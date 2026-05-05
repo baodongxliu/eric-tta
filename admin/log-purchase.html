@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Log bulk lessons · Admin</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="page page-narrow">
+      <div class="page-header">
+        <div>
+          <h1>Log a bulk lesson purchase</h1>
+          <p>Add hours to a student's private or group balance.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <form id="form" class="form">
+          <div class="field">
+            <label class="label" for="student-id">Student</label>
+            <select class="select" id="student-id" required></select>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="type">Type</label>
+              <select class="select" id="type" required>
+                <option value="private">Private</option>
+                <option value="group">Group</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="hours">Hours</label>
+              <input class="input" id="hours" type="number" min="0.5" step="0.5" required />
+            </div>
+            <div class="field">
+              <label class="label" for="purchase-date">Date</label>
+              <input class="input" id="purchase-date" type="date" required />
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="notes">Notes</label>
+            <textarea class="textarea" id="notes" placeholder="Optional"></textarea>
+          </div>
+          <div id="error" class="field-error" hidden></div>
+          <div class="btn-row">
+            <button class="btn" type="submit" id="submit-btn">Save</button>
+            <a class="btn btn-ghost" href="./index.html">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+    <script type="module" src="../js/pages/admin-log-purchase.js"></script>
+  </body>
+</html>

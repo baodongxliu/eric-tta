@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard · Eric Table Tennis</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="page">
+      <div class="page-header">
+        <div>
+          <h1 id="greeting">Welcome</h1>
+          <p>Your membership and lesson balance</p>
+        </div>
+        <a class="btn btn-ghost" href="./history.html">View full history</a>
+      </div>
+
+      <div id="membership-banner"></div>
+
+      <div class="cards-grid">
+        <div class="card" id="card-membership">
+          <div class="card-title">Membership</div>
+          <div class="card-stat" id="ms-tier">—</div>
+          <div class="card-sub" id="ms-sub">Loading…</div>
+        </div>
+        <div class="card" id="card-private">
+          <div class="card-title">Private hours remaining</div>
+          <div class="card-stat" id="priv-remaining">—</div>
+          <div class="card-sub" id="priv-sub">—</div>
+        </div>
+        <div class="card" id="card-group">
+          <div class="card-title">Group hours remaining</div>
+          <div class="card-stat" id="grp-remaining">—</div>
+          <div class="card-sub" id="grp-sub">—</div>
+        </div>
+      </div>
+
+      <section class="card" style="margin-top: 24px">
+        <h2>Recent activity</h2>
+        <div id="recent"></div>
+      </section>
+    </main>
+    <script type="module" src="./js/pages/dashboard.js"></script>
+  </body>
+</html>

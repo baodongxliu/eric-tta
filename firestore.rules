@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// Security rules for the Eric Table Tennis member app.
+//
+// Roles:
+//   - "student": can only read/edit their own data.
+//   - "admin":   can read/write everything (logged purchases, lessons, etc.).
+// Admin status is bootstrapped manually in the Firestore console
+// (set /users/{uid}.role = "admin").
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userDoc().role == "admin";
+    }
+
+    function userFamilyGroupId() {
+      return userDoc().familyGroupId;
+    }
+
+    // ─── /users/{uid} ────────────────────────────────────────────
+    match /users/{uid} {
+      // Read your own; admins read all.
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      // Self-signup: must be the same uid, default role is "student",
+      // and admins can't be self-promoted.
+      allow create: if isSignedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.role == "student";
+
+      // Self-update: only allowed to change displayName (not role/family).
+      allow update: if isSignedIn() && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.familyGroupId == resource.data.familyGroupId
+                    && request.resource.data.email == resource.data.email;
+
+      // Admin can do anything.
+      allow update, delete: if isAdmin();
+    }
+
+    // ─── /familyGroups/{id} ──────────────────────────────────────
+    match /familyGroups/{id} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.memberUids.hasAny([request.auth.uid]));
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── /memberships/{id} ───────────────────────────────────────
+    match /memberships/{id} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.ownerType == "student"
+                      && resource.data.ownerId == request.auth.uid)
+                  || (isSignedIn() && resource.data.ownerType == "family"
+                      && resource.data.ownerId == userFamilyGroupId());
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── /lessonPurchases/{id} ───────────────────────────────────
+    match /lessonPurchases/{id} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── /lessonsUsed/{id} ───────────────────────────────────────
+    match /lessonsUsed/{id} {
+      allow read: if isAdmin()
+                  || (isSignedIn() && resource.data.studentId == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
