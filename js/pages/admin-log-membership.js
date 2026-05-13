@@ -52,7 +52,11 @@ function populateOwners() {
   sel.innerHTML = "";
   const opts =
     ownerType === "family"
-      ? groups.map((g) => ({ value: g.id, label: g.name }))
+      ? // Empty / 1-member groups can't own a family membership; hide them
+        // from the picker. (db.logMembership also enforces this server-side.)
+        groups
+          .filter((g) => (g.memberUids || []).length >= 2)
+          .map((g) => ({ value: g.id, label: g.name }))
       : students.map((s) => ({ value: s.uid, label: `${s.displayName || ""} (${s.email})` }));
   if (opts.length === 0) {
     sel.innerHTML = `<option value="">— none available —</option>`;
@@ -75,6 +79,11 @@ async function onSubmit(ev, adminUid) {
   btn.textContent = "Saving…";
   try {
     const ownerType = document.getElementById("owner-type").value;
+    // Family-owner writes use a transaction (cross-doc validation) and don't
+    // queue offline. Student-owner writes are still offline-friendly addDocs.
+    if (ownerType === "family" && !navigator.onLine) {
+      throw new Error("Logging a family membership needs an online connection.");
+    }
     const ownerId = document.getElementById("owner-id").value;
     const tier = document.getElementById("tier").value.trim();
     const purchaseDate = parseDateInput(document.getElementById("purchase-date").value);

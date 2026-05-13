@@ -58,9 +58,11 @@ export function computeMembershipStatus(memberships, today = new Date()) {
     };
   }
 
-  // Otherwise return the most recently expired one for context.
+  // Otherwise return the most recently expired one for context. Filter to
+  // genuinely past memberships (validUntil < today); a future-dated one
+  // shouldn't be labeled "expired".
   const past = enriched
-    .filter((m) => m._until)
+    .filter((m) => m._until && m._until < todayStart)
     .sort((a, b) => b._until - a._until);
   if (past.length > 0) {
     const m = past[0];

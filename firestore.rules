@@ -56,13 +56,36 @@ service cloud.firestore {
     }
 
     // ─── /memberships/{id} ───────────────────────────────────────
+    // Family memberships carry an immutable `memberUidsAtCreation` snapshot
+    // so former members retain history visibility after leaving the family
+    // (or after the family is dissolved). Family-membership creates MUST
+    // atomically increment the owning group's familyMembershipCount —
+    // that's how commitFamilyGroupDissolve detects concurrent attaches.
+    // Console writes or stale code that skip the increment fail here.
     match /memberships/{id} {
       allow read: if isAdmin()
                   || (isSignedIn() && resource.data.ownerType == "student"
                       && resource.data.ownerId == request.auth.uid)
                   || (isSignedIn() && resource.data.ownerType == "family"
-                      && resource.data.ownerId == userFamilyGroupId());
-      allow create, update, delete: if isAdmin();
+                      && (resource.data.ownerId == userFamilyGroupId()
+                          || (resource.data.memberUidsAtCreation is list
+                              && resource.data.memberUidsAtCreation.hasAny([request.auth.uid]))));
+
+      // .get('familyMembershipCount', 0) treats a missing field as 0, so
+      // legacy familyGroups docs that predate the counter still pass when
+      // a fresh write bumps from 0→1. Newly-created groups initialize the
+      // field to 0 in commitFamilyGroupCreate. No backfill required.
+      allow create: if isAdmin() && (
+        request.resource.data.ownerType == "student"
+        || (
+          request.resource.data.ownerType == "family"
+          && exists(/databases/$(database)/documents/familyGroups/$(request.resource.data.ownerId))
+          && getAfter(/databases/$(database)/documents/familyGroups/$(request.resource.data.ownerId)).data.get('familyMembershipCount', 0)
+             == get(/databases/$(database)/documents/familyGroups/$(request.resource.data.ownerId)).data.get('familyMembershipCount', 0) + 1
+        )
+      );
+
+      allow update, delete: if isAdmin();
     }
 
     // ─── /lessonPurchases/{id} ───────────────────────────────────

@@ -25,6 +25,10 @@ const state = {
   renderHeader({ profile, active: "history" });
 
   const [memberships, purchases, used] = await Promise.all([
+    // Pass currentFamilyGroupId so the helper unions the current-backref
+    // query with the historical-snapshot query — that catches both members
+    // who joined after a family membership was logged AND former members
+    // whose snapshot still includes them.
     listMembershipsForStudent(user.uid, profile?.familyGroupId || null),
     listLessonPurchasesForStudent(user.uid),
     listLessonsUsedForStudent(user.uid),

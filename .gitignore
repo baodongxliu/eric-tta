@@ -2,3 +2,7 @@
 node_modules/
 .firebase/
 *.log
+
+# Local-only AI assistant context (handoff notes, scratch state).
+# Don't ship — these files describe trust boundaries and known weaknesses.
+.claude/

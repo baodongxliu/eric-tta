@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reset password · Eric Table Tennis</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <div class="auth-card">
+        <span class="brand-mark">ETT</span>
+        <h1>Reset your password</h1>
+        <p class="auth-sub">Enter your account email and we'll send a reset link.</p>
+        <form id="reset-form" class="form">
+          <div class="field">
+            <label class="label" for="email">Email</label>
+            <input class="input" id="email" type="email" autocomplete="email" required />
+          </div>
+          <div id="error" class="field-error" hidden></div>
+          <div id="success" class="banner banner-good" hidden>
+            Check your inbox — if an account exists for that email, a reset link is on its way.
+          </div>
+          <button class="btn btn-block" type="submit" id="submit-btn">Send reset link</button>
+        </form>
+        <p class="auth-foot">Remembered it? <a href="./index.html">Back to sign in</a></p>
+      </div>
+    </div>
+    <script type="module" src="./js/pages/reset.js"></script>
+  </body>
+</html>

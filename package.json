@@ -1,0 +1,21 @@
+{
+  "name": "eric-tta",
+  "version": "0.1.0",
+  "description": "Member portal for Eric Table Tennis Club. Static HTML/JS app with Firebase Firestore + Auth backend, deployed to GitHub Pages.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "http-server . -p 8765 -c-1",
+    "test": "node --test test/balance.test.js",
+    "deploy:rules:dev": "firebase deploy --only firestore:rules,firestore:indexes --project dev",
+    "deploy:rules:prod": "firebase deploy --only firestore:rules,firestore:indexes --project prod",
+    "firebase": "firebase"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0",
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

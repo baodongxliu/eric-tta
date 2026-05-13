@@ -5,6 +5,9 @@ import {
   watchAllMemberships,
   watchAllLessonPurchases,
   watchAllLessonsUsed,
+  deleteMembershipRecord,
+  deleteLessonPurchaseRecord,
+  deleteLessonUsedRecord,
 } from "../db.js";
 import {
   computeMembershipStatus,
@@ -239,6 +242,7 @@ function render() {
         el("th", {}, "Who"),
         el("th", {}, "Type"),
         el("th", {}, "Detail"),
+        el("th", {}, ""),
       )),
     );
     const tb = el("tbody");
@@ -246,34 +250,59 @@ function render() {
       let who = "";
       let type = "";
       let detail = "";
+      let summary = "";
       if (item.kind === "membership") {
         const m = memberships.find((x) => x.id === item._id);
         who = labelOf(m);
         type = `<span class="chip chip-membership">Membership</span>`;
         detail = `${item.tier} · ${formatDate(item.validFrom)} → ${formatDate(item.validUntil)}`;
+        summary = `${item.tier} membership for ${who}`;
       } else if (item.kind === "purchase") {
         const p = purchases.find((x) => x.id === item._id);
         who = labelStudent(p.studentId);
         const chip = item.type === "private" ? "chip-private" : "chip-group";
         type = `<span class="chip ${chip}">${escapeHtml(item.type)} purchase</span>`;
         detail = `+${formatHours(item.hours)} h${item.notes ? " · " + escapeHtml(item.notes) : ""}`;
+        summary = `${item.type} +${formatHours(item.hours)}h purchase for ${who}`;
       } else {
         const u = used.find((x) => x.id === item._id);
         who = labelStudent(u.studentId);
         const chip = item.type === "private" ? "chip-private" : "chip-group";
         type = `<span class="chip ${chip}">${escapeHtml(item.type)} lesson</span>`;
         detail = `−${formatHours(item.hours)} h${item.coachName ? " · Coach " + escapeHtml(item.coachName) : ""}`;
+        summary = `${item.type} ${formatHours(item.hours)}h lesson for ${who}`;
       }
+      const delBtn = el("button", {
+        type: "button",
+        class: "btn btn-ghost",
+        title: "Delete this record",
+        onClick: () => onDeleteRecord(item.kind, item._id, summary),
+      }, "Delete");
       tb.appendChild(el("tr", {},
         el("td", {}, formatDate(item.date)),
         el("td", {}, who),
         el("td", { html: type }),
         el("td", { html: detail }),
+        el("td", {}, delBtn),
       ));
     }
     t.appendChild(tb);
     recentEl.innerHTML = "";
     recentEl.appendChild(t);
+  }
+}
+
+async function onDeleteRecord(kind, id, summary) {
+  if (!confirm(`Delete: ${summary}?\n\nThis cannot be undone. Re-log the record manually if you need a corrected version.`)) {
+    return;
+  }
+  try {
+    if (kind === "membership") await deleteMembershipRecord(id);
+    else if (kind === "purchase") await deleteLessonPurchaseRecord(id);
+    else if (kind === "used") await deleteLessonUsedRecord(id);
+    // Realtime listeners will refresh the dashboard automatically.
+  } catch (e) {
+    alert(`Could not delete: ${e.message || e}`);
   }
 }
 

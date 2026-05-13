@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "eric-tta"
+    "default": "eric-tta",
+    "dev": "eric-tta",
+    "prod": "eric-tta-prod"
   }
 }

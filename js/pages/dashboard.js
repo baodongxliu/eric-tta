@@ -18,14 +18,23 @@ import { renderHeader, formatDate, escapeHtml, el } from "../ui.js";
   document.getElementById("greeting").textContent =
     `Welcome${profile?.displayName ? `, ${profile.displayName}` : ""}`;
 
+  const currentFamilyGroupId = profile?.familyGroupId || null;
   const [memberships, purchases, used] = await Promise.all([
-    listMembershipsForStudent(user.uid, profile?.familyGroupId || null),
+    listMembershipsForStudent(user.uid, currentFamilyGroupId),
     listLessonPurchasesForStudent(user.uid),
     listLessonsUsedForStudent(user.uid),
   ]);
 
+  // Past family memberships (from a previous family the student no longer
+  // belongs to) stay visible in the timeline below but must NOT count
+  // toward current entitlement — entitlement requires the student to still
+  // be in that family today.
+  const currentMemberships = memberships.filter(
+    (m) => m.ownerType === "student" || m.ownerId === currentFamilyGroupId
+  );
+
   // ─── Membership card + banner ─────────────────────────────
-  const ms = computeMembershipStatus(memberships);
+  const ms = computeMembershipStatus(currentMemberships);
   const tierEl = document.getElementById("ms-tier");
   const subEl = document.getElementById("ms-sub");
   const banner = document.getElementById("membership-banner");

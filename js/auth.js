@@ -4,6 +4,9 @@ import {
   signOut as fbSignOut,
   onAuthStateChanged,
   updateProfile,
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   doc,
@@ -32,6 +35,30 @@ export async function signUp(email, password, displayName) {
 
 export function signOutUser() {
   return fbSignOut(auth);
+}
+
+export function requestPasswordReset(email) {
+  return sendPasswordResetEmail(auth, email);
+}
+
+// Google sign-in. First-time sign-in auto-creates the /users/{uid} doc
+// (we don't get a separate "register" step for popup providers) — this
+// keeps the orphan-profile guard in requireAuth from bouncing them.
+export async function signInWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  const cred = await signInWithPopup(auth, provider);
+  const userRef = doc(db, "users", cred.user.uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      email: cred.user.email || "",
+      displayName: cred.user.displayName || "",
+      role: "student",
+      familyGroupId: null,
+      createdAt: serverTimestamp(),
+    });
+  }
+  return cred.user;
 }
 
 export function waitForAuth() {

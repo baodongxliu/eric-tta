@@ -267,6 +267,21 @@ h3 {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.btn-google {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-google:hover {
+  background: var(--bg-soft);
+}
+.google-icon {
+  flex-shrink: 0;
+}
 
 .btn-row {
   display: flex;
@@ -434,6 +449,42 @@ h3 {
   color: var(--text-muted);
   text-align: center;
   margin-top: 14px;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ─── DEV environment badge ──────────────────────────────────────────── */
+.env-badge {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  background: var(--warn);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 9999;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+  cursor: help;
 }
 
 /* ─── Toasts ─────────────────────────────────────────────────────────── */

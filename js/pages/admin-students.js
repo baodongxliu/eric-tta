@@ -5,9 +5,10 @@ import {
   listAllMemberships,
   listAllLessonPurchases,
   listAllLessonsUsed,
-  createFamilyGroup,
-  updateFamilyGroup,
-  updateUserProfile,
+  commitFamilyGroupCreate,
+  commitFamilyGroupTransfer,
+  commitFamilyGroupDissolve,
+  commitStudentDisplayName,
 } from "../db.js";
 import {
   computeMembershipStatus,
@@ -65,6 +66,7 @@ function renderGroups() {
       el("thead", {}, el("tr", {},
         el("th", {}, "Group"),
         el("th", {}, "Members"),
+        el("th", {}, ""),
       )),
     );
     const tb = el("tbody");
@@ -73,9 +75,15 @@ function renderGroups() {
       const names = (g.memberUids || [])
         .map((u) => byUid.get(u)?.displayName || byUid.get(u)?.email || u)
         .join(", ");
+      const dissolveBtn = el("button", {
+        type: "button",
+        class: "btn btn-ghost",
+        onClick: () => onDissolveGroup(g),
+      }, "Dissolve");
       tb.appendChild(el("tr", {},
         el("td", {}, g.name),
         el("td", {}, names || "—"),
+        el("td", {}, dissolveBtn),
       ));
     }
     t.appendChild(tb);
@@ -111,32 +119,15 @@ function wireGroupForm() {
       showToast("Pick 2 to 4 members.", "error");
       return;
     }
+    // Family-group writes use Firestore transactions, which require a live
+    // backend connection — they don't queue offline like our other admin
+    // writes. Refuse explicitly rather than letting the transaction error.
+    if (!navigator.onLine) {
+      showToast("Family group changes need an online connection.", "error");
+      return;
+    }
     try {
-      // Pre-cleanup: any picked student already in another group must be
-      // removed from that old group's memberUids first.
-      const studentByUid = new Map(state.students.map((s) => [s.uid, s]));
-      const oldGroupUpdates = new Map(); // groupId → new memberUids array
-      for (const uid of picked) {
-        const oldId = studentByUid.get(uid)?.familyGroupId;
-        if (!oldId) continue;
-        const oldGroup = state.groups.find((g) => g.id === oldId);
-        if (!oldGroup) continue;
-        const current = oldGroupUpdates.get(oldId) ?? oldGroup.memberUids ?? [];
-        oldGroupUpdates.set(
-          oldId,
-          current.filter((u) => u !== uid)
-        );
-      }
-      await Promise.all(
-        [...oldGroupUpdates.entries()].map(([id, memberUids]) =>
-          updateFamilyGroup(id, { memberUids })
-        )
-      );
-
-      const ref = await createFamilyGroup(name, picked);
-      await Promise.all(
-        picked.map((uid) => updateUserProfile(uid, { familyGroupId: ref.id }))
-      );
+      await commitFamilyGroupCreate({ name, picked });
       showToast("Family group created.", "success");
       document.getElementById("group-form").reset();
       await loadAll();
@@ -146,6 +137,26 @@ function wireGroupForm() {
       showToast(e.message || "Could not create group.", "error");
     }
   });
+}
+
+async function onDissolveGroup(group) {
+  const ok = confirm(
+    `Dissolve "${group.name}"? Each member will revert to no family.\n\nThis is the only way to clear a 2-member family or empty group; it can't proceed if family-tier memberships are still attached.`
+  );
+  if (!ok) return;
+  if (!navigator.onLine) {
+    showToast("Dissolving a family needs an online connection.", "error");
+    return;
+  }
+  try {
+    await commitFamilyGroupDissolve(group.id);
+    showToast(`Dissolved "${group.name}".`, "success");
+    await loadAll();
+    renderGroups();
+    renderStudents();
+  } catch (e) {
+    showToast(e.message || "Could not dissolve group.", "error");
+  }
 }
 
 function renderStudents() {
@@ -237,6 +248,10 @@ function openEditDialog(student) {
   const saveBtn = document.getElementById("edit-save");
   const cancelBtn = document.getElementById("edit-cancel");
 
+  // Captured at open time so we can detect a stale dialog (admin B moved this
+  // student between our open and our submit) inside the transaction.
+  const initialGroupId = student.familyGroupId || null;
+
   document.getElementById("edit-title").textContent = `Edit ${student.displayName || "student"}`;
   document.getElementById("edit-email").textContent = student.email || "";
   nameEl.value = student.displayName || "";
@@ -258,36 +273,36 @@ function openEditDialog(student) {
   form.onsubmit = async (ev) => {
     ev.preventDefault();
     errEl.hidden = true;
+
+    const newName = nameEl.value.trim();
+    const newGroupId = groupEl.value || null;
+    const groupChangeRequested = newGroupId !== initialGroupId;
+
+    // Only the family-group path needs a live connection (it uses a
+    // transaction); pure name edits queue offline like the rest of admin.
+    if (groupChangeRequested && !navigator.onLine) {
+      errEl.textContent = "Family group changes need an online connection.";
+      errEl.hidden = false;
+      return;
+    }
+
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
     try {
-      const newName = nameEl.value.trim();
-      const newGroupId = groupEl.value || null;
       if (!newName) throw new Error("Display name is required.");
 
-      await updateUserProfile(student.uid, {
-        displayName: newName,
-        familyGroupId: newGroupId,
-      });
-
-      // Keep familyGroups.memberUids consistent with users.familyGroupId.
-      if (newGroupId !== student.familyGroupId) {
-        if (student.familyGroupId) {
-          const g = state.groups.find((x) => x.id === student.familyGroupId);
-          if (g) {
-            await updateFamilyGroup(g.id, {
-              memberUids: (g.memberUids || []).filter((u) => u !== student.uid),
-            });
-          }
-        }
-        if (newGroupId) {
-          const g = state.groups.find((x) => x.id === newGroupId);
-          if (g && !(g.memberUids || []).includes(student.uid)) {
-            await updateFamilyGroup(g.id, {
-              memberUids: [...(g.memberUids || []), student.uid],
-            });
-          }
-        }
+      if (groupChangeRequested) {
+        await commitFamilyGroupTransfer({
+          uid: student.uid,
+          displayName: newName,
+          toGroupId: newGroupId,
+          expectedFromGroupId: initialGroupId,
+        });
+      } else {
+        await commitStudentDisplayName({
+          uid: student.uid,
+          displayName: newName,
+        });
       }
 
       dlg.close("save");
@@ -303,9 +318,8 @@ function openEditDialog(student) {
     }
   };
 
-  // Close on Escape (native <dialog> behavior) or click on the backdrop.
-  // We compare against the dialog's bounding rect so clicks on the modal's
-  // own padding (which are technically targeted at <dialog>) don't dismiss.
+  // Compare to the dialog's bounding rect so clicks on the modal's own
+  // padding (which target <dialog> but look "inside" to the user) don't dismiss.
   dlg.onclick = (ev) => {
     const r = dlg.getBoundingClientRect();
     if (
