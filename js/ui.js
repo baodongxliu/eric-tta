@@ -109,6 +109,24 @@ export function showToast(msg, kind = "info") {
   setTimeout(() => t.remove(), 2900);
 }
 
+// Wire an <input list> + <datalist> as a typeahead student picker.
+// Browser-native search: matches by name OR email substring as the admin
+// types. Returns a resolver `(value) => uid|null` for the submit handler.
+// Replaces the v0 flat `<select>` which became unusable past ~50 students.
+export function populateStudentTypeahead(inputEl, datalistEl, students) {
+  const byLabel = new Map();
+  datalistEl.innerHTML = "";
+  for (const s of students) {
+    const label = s.displayName ? `${s.displayName} (${s.email})` : s.email;
+    if (byLabel.has(label)) continue; // skip exact-duplicate labels
+    byLabel.set(label, s.uid);
+    const opt = document.createElement("option");
+    opt.value = label;
+    datalistEl.appendChild(opt);
+  }
+  return (typedValue) => byLabel.get((typedValue || "").trim()) || null;
+}
+
 export function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")

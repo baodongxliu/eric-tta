@@ -26,8 +26,16 @@
             </select>
           </div>
           <div class="field">
-            <label class="label" for="owner-id">Whose membership?</label>
-            <select class="select" id="owner-id" required></select>
+            <label class="label" for="owner-id-student">Whose membership?</label>
+            <input
+              class="input"
+              id="owner-id-student"
+              list="owner-student-list"
+              placeholder="Type student name or email…"
+              autocomplete="off"
+            />
+            <select class="select" id="owner-id-family" hidden></select>
+            <datalist id="owner-student-list"></datalist>
           </div>
           <div class="field">
             <label class="label" for="tier">Tier</label>

@@ -20,7 +20,15 @@
         <form id="form" class="form">
           <div class="field">
             <label class="label" for="student-id">Student</label>
-            <select class="select" id="student-id" required></select>
+            <input
+              class="input"
+              id="student-id"
+              list="student-list"
+              placeholder="Type name or email to search…"
+              autocomplete="off"
+              required
+            />
+            <datalist id="student-list"></datalist>
           </div>
           <div class="field-row">
             <div class="field">

@@ -6,7 +6,13 @@ import {
   logLessonUsed,
 } from "../db.js";
 import { computeHoursBalance } from "../balance.js";
-import { renderHeader, todayInput, parseDateInput, showToast } from "../ui.js";
+import {
+  renderHeader,
+  todayInput,
+  parseDateInput,
+  showToast,
+  populateStudentTypeahead,
+} from "../ui.js";
 
 (async () => {
   const { user, profile } = await requireAdmin();
@@ -16,18 +22,14 @@ import { renderHeader, todayInput, parseDateInput, showToast } from "../ui.js";
     (a.displayName || a.email).localeCompare(b.displayName || b.email)
   );
   const sel = document.getElementById("student-id");
-  for (const s of students) {
-    const opt = document.createElement("option");
-    opt.value = s.uid;
-    opt.textContent = `${s.displayName || ""} (${s.email})`;
-    sel.appendChild(opt);
-  }
+  const datalist = document.getElementById("student-list");
+  const resolveStudentUid = populateStudentTypeahead(sel, datalist, students);
 
   document.getElementById("date").value = todayInput();
 
   // Live balance preview.
   const checkBalance = async () => {
-    const studentId = sel.value;
+    const studentId = resolveStudentUid(sel.value);
     const type = document.getElementById("type").value;
     const hours = Number(document.getElementById("hours").value || 0);
     const warn = document.getElementById("balance-warn");
@@ -73,14 +75,14 @@ import { renderHeader, todayInput, parseDateInput, showToast } from "../ui.js";
     btn.disabled = true;
     btn.textContent = "Saving…";
     try {
-      const studentId = sel.value;
+      const studentId = resolveStudentUid(sel.value);
       const date = parseDateInput(document.getElementById("date").value);
       const type = document.getElementById("type").value;
       const hours = Number(document.getElementById("hours").value);
       const coachName = document.getElementById("coach").value.trim();
       const notes = document.getElementById("notes").value;
 
-      if (!studentId) throw new Error("Pick a student.");
+      if (!studentId) throw new Error("Pick a student from the suggestions list.");
       if (!hours || hours <= 0) throw new Error("Hours must be greater than 0.");
 
       await logLessonUsed({
