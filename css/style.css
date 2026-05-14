@@ -299,6 +299,44 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  position: relative;        /* anchor for .combo-popup absolute */
+}
+
+/* ─── Combobox (student typeahead) ───────────────────────────────────── */
+.combo-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 50;
+}
+.combo-item {
+  padding: 9px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.combo-item:last-child {
+  border-bottom: 0;
+}
+.combo-item:hover,
+.combo-item.is-active {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.combo-empty {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
 }
 .field-row {
   display: flex;

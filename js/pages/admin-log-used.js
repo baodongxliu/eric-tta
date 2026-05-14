@@ -22,8 +22,7 @@ import {
     (a.displayName || a.email).localeCompare(b.displayName || b.email)
   );
   const sel = document.getElementById("student-id");
-  const datalist = document.getElementById("student-list");
-  const resolveStudentUid = populateStudentTypeahead(sel, datalist, students);
+  const resolveStudentUid = populateStudentTypeahead(sel, null, students);
 
   document.getElementById("date").value = todayInput();
 

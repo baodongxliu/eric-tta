@@ -109,21 +109,113 @@ export function showToast(msg, kind = "info") {
   setTimeout(() => t.remove(), 2900);
 }
 
-// Wire an <input list> + <datalist> as a typeahead student picker.
-// Browser-native search: matches by name OR email substring as the admin
-// types. Returns a resolver `(value) => uid|null` for the submit handler.
-// Replaces the v0 flat `<select>` which became unusable past ~50 students.
+// Attach a custom student-search combobox to an <input>. Replaces the
+// native <datalist>, whose search behavior is inconsistent across
+// browsers (Safari does prefix-only on `value`; Chrome does substring).
+// This implementation: case-insensitive substring match across both
+// name AND email, mouse + keyboard selection, popup auto-positioned
+// under the input.
+//
+// Returns `(value) => uid|null`. If the value matches a known student
+// label exactly, returns the uid; otherwise null.
+//
+// `datalistEl` is accepted for backward compat (caller can pass null)
+// — when supplied, its contents are emptied so the native dropdown
+// doesn't conflict with the custom popup.
 export function populateStudentTypeahead(inputEl, datalistEl, students) {
+  if (datalistEl) datalistEl.innerHTML = "";
+  inputEl.removeAttribute("list");
+
+  const items = [];
   const byLabel = new Map();
-  datalistEl.innerHTML = "";
   for (const s of students) {
     const label = s.displayName ? `${s.displayName} (${s.email})` : s.email;
-    if (byLabel.has(label)) continue; // skip exact-duplicate labels
+    if (byLabel.has(label)) continue;
     byLabel.set(label, s.uid);
-    const opt = document.createElement("option");
-    opt.value = label;
-    datalistEl.appendChild(opt);
+    items.push({
+      label,
+      uid: s.uid,
+      name: (s.displayName || "").toLowerCase(),
+      email: (s.email || "").toLowerCase(),
+    });
   }
+
+  const popup = document.createElement("div");
+  popup.className = "combo-popup";
+  popup.hidden = true;
+  inputEl.parentNode.insertBefore(popup, inputEl.nextSibling);
+
+  let activeIndex = -1;
+  let visible = [];
+
+  const closePopup = () => {
+    popup.hidden = true;
+    activeIndex = -1;
+  };
+
+  const render = () => {
+    const q = (inputEl.value || "").toLowerCase().trim();
+    visible = q
+      ? items.filter((x) => x.name.includes(q) || x.email.includes(q))
+      : items;
+    visible = visible.slice(0, 50);
+
+    popup.innerHTML = "";
+    if (visible.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "combo-empty";
+      empty.textContent = q ? "No matches" : "Start typing…";
+      popup.appendChild(empty);
+    } else {
+      visible.forEach((x, i) => {
+        const row = document.createElement("div");
+        row.className = "combo-item";
+        if (i === activeIndex) row.classList.add("is-active");
+        row.textContent = x.label;
+        row.addEventListener("mousedown", (ev) => {
+          ev.preventDefault(); // don't blur the input before click registers
+          inputEl.value = x.label;
+          inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+          closePopup();
+        });
+        popup.appendChild(row);
+      });
+    }
+    popup.hidden = false;
+  };
+
+  inputEl.addEventListener("focus", render);
+  inputEl.addEventListener("input", () => {
+    activeIndex = -1;
+    render();
+  });
+  inputEl.addEventListener("blur", () => {
+    // Delay so a mousedown on a row registers before we hide.
+    setTimeout(closePopup, 120);
+  });
+  inputEl.addEventListener("keydown", (ev) => {
+    if (popup.hidden) return;
+    if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      activeIndex = Math.min(visible.length - 1, activeIndex + 1);
+      render();
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      activeIndex = Math.max(0, activeIndex - 1);
+      render();
+    } else if (ev.key === "Enter" && activeIndex >= 0) {
+      ev.preventDefault();
+      const pick = visible[activeIndex];
+      if (pick) {
+        inputEl.value = pick.label;
+        inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      closePopup();
+    } else if (ev.key === "Escape") {
+      closePopup();
+    }
+  });
+
   return (typedValue) => byLabel.get((typedValue || "").trim()) || null;
 }
 

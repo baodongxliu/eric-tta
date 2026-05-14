@@ -17,8 +17,7 @@ import {
   );
 
   const sel = document.getElementById("student-id");
-  const datalist = document.getElementById("student-list");
-  const resolveStudentUid = populateStudentTypeahead(sel, datalist, students);
+  const resolveStudentUid = populateStudentTypeahead(sel, null, students);
 
   document.getElementById("purchase-date").value = todayInput();
 

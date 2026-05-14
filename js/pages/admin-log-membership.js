@@ -29,8 +29,7 @@ let resolveStudentUid = () => null;
   groups.sort((a, b) => a.name.localeCompare(b.name));
 
   const studentInput = document.getElementById("owner-id-student");
-  const studentDatalist = document.getElementById("owner-student-list");
-  resolveStudentUid = populateStudentTypeahead(studentInput, studentDatalist, students);
+  resolveStudentUid = populateStudentTypeahead(studentInput, null, students);
 
   // Defaults
   const t = todayInput();
