@@ -104,6 +104,9 @@ import {
 
       if (!studentId) throw new Error("Pick a student from the suggestions list.");
       if (!startTime || !endTime) throw new Error("Start and end times are required.");
+      if (!isHalfHour(startTime) || !isHalfHour(endTime)) {
+        throw new Error("Times must land on :00 or :30 — lessons start on the half hour.");
+      }
       if (!hours || hours <= 0) throw new Error("End time must be after start time.");
 
       const ok = await confirmAction({
@@ -151,19 +154,26 @@ import {
 })();
 
 // Returns decimal hours between two "HH:mm" strings, or null if either
-// is missing or end is not after start.
+// is missing, not on :00/:30, or end is not after start.
 function hoursFromTimes(start, end) {
   if (!start || !end) return null;
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
   if ([sh, sm, eh, em].some((n) => !Number.isFinite(n))) return null;
+  if (![0, 30].includes(sm) || ![0, 30].includes(em)) return null;
   const minutes = eh * 60 + em - (sh * 60 + sm);
   if (minutes <= 0) return null;
   return minutes / 60;
 }
 
 // Render hours with up to 2 decimal places, trimming trailing zeros so
-// 1.0 displays as "1" and 1.25 as "1.25".
+// 1.0 displays as "1" and 1.5 as "1.5".
 function formatHoursForInput(h) {
   return Number(h.toFixed(2)).toString();
+}
+
+function isHalfHour(time) {
+  if (!time) return false;
+  const m = Number(time.split(":")[1]);
+  return m === 0 || m === 30;
 }

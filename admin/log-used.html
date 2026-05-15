@@ -44,15 +44,17 @@
           <div class="field-row">
             <div class="field">
               <label class="label" for="start-time">Start time</label>
-              <input class="input" id="start-time" type="time" required />
+              <input class="input" id="start-time" type="time" step="1800" required />
+              <span class="field-help">Lessons start on :00 or :30.</span>
             </div>
             <div class="field">
               <label class="label" for="end-time">End time</label>
-              <input class="input" id="end-time" type="time" required />
+              <input class="input" id="end-time" type="time" step="1800" required />
+              <span class="field-help">Lessons end on :00 or :30.</span>
             </div>
             <div class="field">
               <label class="label" for="hours">Hours</label>
-              <input class="input" id="hours" type="number" step="0.25" readonly required />
+              <input class="input" id="hours" type="number" step="0.5" readonly required />
               <span class="field-help">Auto-calculated from start &amp; end.</span>
             </div>
           </div>
