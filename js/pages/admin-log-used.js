@@ -34,6 +34,8 @@ import {
   const startEl = document.getElementById("start-time");
   const endEl = document.getElementById("end-time");
   const hoursEl = document.getElementById("hours");
+  populateHalfHourOptions(startEl);
+  populateHalfHourOptions(endEl);
   const recomputeHours = () => {
     const h = hoursFromTimes(startEl.value, endEl.value);
     hoursEl.value = h != null ? formatHoursForInput(h) : "";
@@ -176,4 +178,24 @@ function isHalfHour(time) {
   if (!time) return false;
   const m = Number(time.split(":")[1]);
   return m === 0 || m === 30;
+}
+
+// Fill a <select> with all 48 half-hour times (00:00 through 23:30).
+// The option `value` is the 24-hour "HH:mm" string the rest of the
+// module already understands; the label is rendered in 12-hour AM/PM
+// form, which is what ETT admins read at a glance. A placeholder
+// option (value="") is preserved if the caller put one there.
+function populateHalfHourOptions(selectEl) {
+  for (let h = 0; h < 24; h++) {
+    for (const m of [0, 30]) {
+      const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      const period = h < 12 ? "AM" : "PM";
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${h12}:${String(m).padStart(2, "0")} ${period}`;
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = label;
+      selectEl.appendChild(opt);
+    }
+  }
 }
