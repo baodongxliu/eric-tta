@@ -28,11 +28,30 @@ import {
 
   document.getElementById("date").value = todayInput();
 
+  // Start/end time → hours derivation. The hours input is readonly and
+  // gets its value from this computation; admin picks times, the number
+  // appears automatically.
+  const startEl = document.getElementById("start-time");
+  const endEl = document.getElementById("end-time");
+  const hoursEl = document.getElementById("hours");
+  const recomputeHours = () => {
+    const h = hoursFromTimes(startEl.value, endEl.value);
+    hoursEl.value = h != null ? formatHoursForInput(h) : "";
+  };
+  startEl.addEventListener("change", () => {
+    recomputeHours();
+    checkBalanceSoon();
+  });
+  endEl.addEventListener("change", () => {
+    recomputeHours();
+    checkBalanceSoon();
+  });
+
   // Live balance preview.
   const checkBalance = async () => {
     const studentId = resolveStudentUid(sel.value);
     const type = document.getElementById("type").value;
-    const hours = Number(document.getElementById("hours").value || 0);
+    const hours = Number(hoursEl.value || 0);
     const warn = document.getElementById("balance-warn");
     if (!studentId || !type || !hours) {
       warn.hidden = true;
@@ -77,12 +96,15 @@ import {
       const studentId = resolveStudentUid(sel.value);
       const date = parseDateInput(document.getElementById("date").value);
       const type = document.getElementById("type").value;
-      const hours = Number(document.getElementById("hours").value);
+      const startTime = startEl.value;
+      const endTime = endEl.value;
+      const hours = Number(hoursEl.value);
       const coachName = document.getElementById("coach").value.trim();
       const notes = document.getElementById("notes").value;
 
       if (!studentId) throw new Error("Pick a student from the suggestions list.");
-      if (!hours || hours <= 0) throw new Error("Hours must be greater than 0.");
+      if (!startTime || !endTime) throw new Error("Start and end times are required.");
+      if (!hours || hours <= 0) throw new Error("End time must be after start time.");
 
       const ok = await confirmAction({
         title: "Log this lesson?",
@@ -90,8 +112,9 @@ import {
         rows: [
           ["Student", sel.value],
           ["Date", formatDate(date || new Date())],
+          ["Time", `${startTime} – ${endTime}`],
           ["Type", type],
-          ["Hours", `${hours}`],
+          ["Hours", String(hours)],
           ["Coach", coachName || "—"],
           ["Notes", notes || "—"],
         ],
@@ -113,7 +136,9 @@ import {
       showToast("Lesson saved.", "success");
       document.getElementById("form").reset();
       document.getElementById("date").value = todayInput();
-      document.getElementById("hours").value = "1";
+      startEl.value = "";
+      endEl.value = "";
+      hoursEl.value = "";
       checkBalance();
     } catch (e) {
       errEl.textContent = e.message || "Could not save.";
@@ -124,3 +149,21 @@ import {
     }
   });
 })();
+
+// Returns decimal hours between two "HH:mm" strings, or null if either
+// is missing or end is not after start.
+function hoursFromTimes(start, end) {
+  if (!start || !end) return null;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  if ([sh, sm, eh, em].some((n) => !Number.isFinite(n))) return null;
+  const minutes = eh * 60 + em - (sh * 60 + sm);
+  if (minutes <= 0) return null;
+  return minutes / 60;
+}
+
+// Render hours with up to 2 decimal places, trimming trailing zeros so
+// 1.0 displays as "1" and 1.25 as "1.25".
+function formatHoursForInput(h) {
+  return Number(h.toFixed(2)).toString();
+}
