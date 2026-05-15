@@ -601,6 +601,47 @@ export function logLessonUsed({
   });
 }
 
+// ─── Admin record updates (typo correction) ───────────────────────────
+// Restricted to non-identity fields. Identity fields (studentId,
+// ownerType, ownerId, memberUidsAtCreation, familyMembershipCount) are
+// stripped from the patch even if accidentally passed — changing them
+// would re-route balances / entitlement and bypass the create-time
+// validation. Mistakes there are delete-and-relog.
+
+export function updateMembershipRecord(id, patch) {
+  const data = { ...patch };
+  if (data.validFrom instanceof Date) data.validFrom = Timestamp.fromDate(data.validFrom);
+  if (data.validUntil instanceof Date) data.validUntil = Timestamp.fromDate(data.validUntil);
+  if (data.purchaseDate instanceof Date) data.purchaseDate = Timestamp.fromDate(data.purchaseDate);
+  delete data.ownerType;
+  delete data.ownerId;
+  delete data.memberUidsAtCreation;
+  delete data.familyMembershipCount;
+  delete data.createdAt;
+  delete data.createdBy;
+  return updateDoc(doc(db, "memberships", id), data);
+}
+
+export function updateLessonPurchaseRecord(id, patch) {
+  const data = { ...patch };
+  if (data.purchaseDate instanceof Date) data.purchaseDate = Timestamp.fromDate(data.purchaseDate);
+  if (data.hours !== undefined && data.hours !== null) data.hours = Number(data.hours);
+  delete data.studentId;
+  delete data.createdAt;
+  delete data.createdBy;
+  return updateDoc(doc(db, "lessonPurchases", id), data);
+}
+
+export function updateLessonUsedRecord(id, patch) {
+  const data = { ...patch };
+  if (data.date instanceof Date) data.date = Timestamp.fromDate(data.date);
+  if (data.hours !== undefined && data.hours !== null) data.hours = Number(data.hours);
+  delete data.studentId;
+  delete data.createdAt;
+  delete data.createdBy;
+  return updateDoc(doc(db, "lessonsUsed", id), data);
+}
+
 // ─── Admin record deletes ──────────────────────────────────────────────
 // Plain deletes for typo correction. Family-tier membership deletes do
 // NOT decrement familyMembershipCount because the counter is monotonic

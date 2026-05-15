@@ -289,6 +289,17 @@ h3 {
   flex-wrap: wrap;
 }
 
+/* Edit/Delete cluster inside a table row — compact, single-line. */
+.row-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+.row-actions .btn {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
 /* ─── Forms ──────────────────────────────────────────────────────────── */
 .form {
   display: flex;
