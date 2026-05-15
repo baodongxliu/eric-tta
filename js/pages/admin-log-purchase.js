@@ -4,8 +4,10 @@ import {
   renderHeader,
   todayInput,
   parseDateInput,
+  formatDate,
   showToast,
   populateStudentTypeahead,
+  confirmAction,
 } from "../ui.js";
 
 (async () => {
@@ -26,8 +28,6 @@ import {
     const errEl = document.getElementById("error");
     errEl.hidden = true;
     const btn = document.getElementById("submit-btn");
-    btn.disabled = true;
-    btn.textContent = "Saving…";
     try {
       const studentId = resolveStudentUid(sel.value);
       const type = document.getElementById("type").value;
@@ -38,6 +38,22 @@ import {
       if (!studentId) throw new Error("Pick a student from the suggestions list.");
       if (!hours || hours <= 0) throw new Error("Hours must be greater than 0.");
 
+      const ok = await confirmAction({
+        title: "Log this bulk purchase?",
+        description: "This adds hours to the student's balance.",
+        rows: [
+          ["Student", sel.value],
+          ["Type", type],
+          ["Hours", `+${hours}`],
+          ["Date", formatDate(purchaseDate || new Date())],
+          ["Notes", notes || "—"],
+        ],
+        confirmLabel: "Save purchase",
+      });
+      if (!ok) return;
+
+      btn.disabled = true;
+      btn.textContent = "Saving…";
       await logLessonPurchase({
         studentId,
         type,

@@ -14,7 +14,7 @@ import {
   computeHoursBalance,
   buildTimeline,
 } from "../balance.js";
-import { renderHeader, formatDate, escapeHtml, el } from "../ui.js";
+import { renderHeader, formatDate, escapeHtml, el, confirmAction } from "../ui.js";
 
 // Live state. Each key starts null until its first snapshot arrives;
 // we delay rendering until everything has loaded once.
@@ -293,9 +293,18 @@ function render() {
 }
 
 async function onDeleteRecord(kind, id, summary) {
-  if (!confirm(`Delete: ${summary}?\n\nThis cannot be undone. Re-log the record manually if you need a corrected version.`)) {
-    return;
-  }
+  const ok = await confirmAction({
+    title: "Delete this record?",
+    description:
+      "This cannot be undone. Re-log the record manually if you need a corrected version.",
+    rows: [
+      ["What", summary],
+      ["Record ID", id],
+    ],
+    confirmLabel: "Delete",
+    variant: "danger",
+  });
+  if (!ok) return;
   try {
     if (kind === "membership") await deleteMembershipRecord(id);
     else if (kind === "purchase") await deleteLessonPurchaseRecord(id);

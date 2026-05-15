@@ -14,7 +14,7 @@ import {
   computeMembershipStatus,
   computeHoursBalance,
 } from "../balance.js";
-import { renderHeader, formatDate, escapeHtml, el, showToast } from "../ui.js";
+import { renderHeader, formatDate, escapeHtml, el, showToast, confirmAction } from "../ui.js";
 
 const state = {
   students: [],
@@ -126,6 +126,22 @@ function wireGroupForm() {
       showToast("Family group changes need an online connection.", "error");
       return;
     }
+
+    const byUid = new Map(state.students.map((s) => [s.uid, s]));
+    const memberLabels = picked
+      .map((u) => byUid.get(u)?.displayName || byUid.get(u)?.email || u)
+      .join(", ");
+    const ok = await confirmAction({
+      title: "Create this family group?",
+      rows: [
+        ["Name", name],
+        ["Members", memberLabels],
+        ["Count", String(picked.length)],
+      ],
+      confirmLabel: "Create family",
+    });
+    if (!ok) return;
+
     try {
       await commitFamilyGroupCreate({ name, picked });
       showToast("Family group created.", "success");
@@ -140,9 +156,21 @@ function wireGroupForm() {
 }
 
 async function onDissolveGroup(group) {
-  const ok = confirm(
-    `Dissolve "${group.name}"? Each member will revert to no family.\n\nThis is the only way to clear a 2-member family or empty group; it can't proceed if family-tier memberships are still attached.`
-  );
+  const byUid = new Map(state.students.map((s) => [s.uid, s]));
+  const memberLabels = (group.memberUids || [])
+    .map((u) => byUid.get(u)?.displayName || byUid.get(u)?.email || u)
+    .join(", ");
+  const ok = await confirmAction({
+    title: `Dissolve "${group.name}"?`,
+    description:
+      "Each listed member will revert to no family. This is the only way to clear a 2-member family or an empty group. It will fail if any active family-tier membership is still attached.",
+    rows: [
+      ["Family", group.name],
+      ["Members", memberLabels || "(empty)"],
+    ],
+    confirmLabel: "Dissolve",
+    variant: "danger",
+  });
   if (!ok) return;
   if (!navigator.onLine) {
     showToast("Dissolving a family needs an online connection.", "error");
@@ -286,10 +314,37 @@ function openEditDialog(student) {
       return;
     }
 
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving…";
     try {
       if (!newName) throw new Error("Display name is required.");
+
+      // Build a diff preview — only show fields that actually change.
+      const changeRows = [];
+      if (newName !== (student.displayName || "")) {
+        changeRows.push(["Display name", `${student.displayName || "—"} → ${newName}`]);
+      }
+      if (groupChangeRequested) {
+        const oldGroup = student.familyGroupId
+          ? state.groups.find((g) => g.id === student.familyGroupId)?.name || "(unknown)"
+          : "(none)";
+        const newGroup = newGroupId
+          ? state.groups.find((g) => g.id === newGroupId)?.name || "(unknown)"
+          : "(none)";
+        changeRows.push(["Family group", `${oldGroup} → ${newGroup}`]);
+      }
+      if (changeRows.length === 0) {
+        // Nothing changed — close without writing.
+        dlg.close("save");
+        return;
+      }
+      const ok = await confirmAction({
+        title: `Save changes to ${student.displayName || student.email}?`,
+        rows: changeRows,
+        confirmLabel: "Save",
+      });
+      if (!ok) return;
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
 
       if (groupChangeRequested) {
         await commitFamilyGroupTransfer({

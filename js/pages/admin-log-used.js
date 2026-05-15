@@ -10,8 +10,10 @@ import {
   renderHeader,
   todayInput,
   parseDateInput,
+  formatDate,
   showToast,
   populateStudentTypeahead,
+  confirmAction,
 } from "../ui.js";
 
 (async () => {
@@ -71,8 +73,6 @@ import {
     const errEl = document.getElementById("error");
     errEl.hidden = true;
     const btn = document.getElementById("submit-btn");
-    btn.disabled = true;
-    btn.textContent = "Saving…";
     try {
       const studentId = resolveStudentUid(sel.value);
       const date = parseDateInput(document.getElementById("date").value);
@@ -84,6 +84,23 @@ import {
       if (!studentId) throw new Error("Pick a student from the suggestions list.");
       if (!hours || hours <= 0) throw new Error("Hours must be greater than 0.");
 
+      const ok = await confirmAction({
+        title: "Log this lesson?",
+        description: "This deducts hours from the student's balance.",
+        rows: [
+          ["Student", sel.value],
+          ["Date", formatDate(date || new Date())],
+          ["Type", type],
+          ["Hours", `${hours}`],
+          ["Coach", coachName || "—"],
+          ["Notes", notes || "—"],
+        ],
+        confirmLabel: "Save lesson",
+      });
+      if (!ok) return;
+
+      btn.disabled = true;
+      btn.textContent = "Saving…";
       await logLessonUsed({
         studentId,
         date: date || new Date(),

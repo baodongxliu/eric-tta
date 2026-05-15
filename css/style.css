@@ -625,6 +625,47 @@ h3 {
 .modal[open] {
   animation: modal-in 0.14s ease-out;
 }
+
+/* ─── Confirm-with-preview modal ─────────────────────────────────────── */
+.modal-confirm {
+  max-width: 480px;
+}
+.confirm-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.confirm-description {
+  margin: 0 0 14px;
+}
+.confirm-rows {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+.confirm-rows th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 12px 6px 0;
+  vertical-align: top;
+  width: 33%;
+  white-space: nowrap;
+}
+.confirm-rows td {
+  padding: 6px 0;
+  vertical-align: top;
+  word-break: break-word;
+}
+.btn-danger {
+  background: var(--bad);
+}
+.btn-danger:hover {
+  background: #8a2330;
+}
 @keyframes modal-in {
   from {
     transform: translateY(8px);

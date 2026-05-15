@@ -9,9 +9,11 @@ import {
   todayInput,
   parseDateInput,
   formatDateInput,
+  formatDate,
   addDays,
   showToast,
   populateStudentTypeahead,
+  confirmAction,
 } from "../ui.js";
 
 let students = [];
@@ -88,8 +90,6 @@ async function onSubmit(ev, adminUid) {
   const errEl = document.getElementById("error");
   errEl.hidden = true;
   const btn = document.getElementById("submit-btn");
-  btn.disabled = true;
-  btn.textContent = "Saving…";
   try {
     const ownerType = document.getElementById("owner-type").value;
     // Family-owner writes use a transaction (cross-doc validation) and don't
@@ -118,6 +118,35 @@ async function onSubmit(ev, adminUid) {
     if (!validFrom || !validUntil) throw new Error("Both valid-from and valid-until are required.");
     if (validUntil < validFrom) throw new Error("Valid-until must be on or after valid-from.");
 
+    // Build an owner-label for the preview.
+    let ownerLabel;
+    if (ownerType === "family") {
+      const sel = document.getElementById("owner-id-family");
+      ownerLabel = `Family: ${sel.options[sel.selectedIndex]?.text || ownerId}`;
+    } else {
+      ownerLabel = `Student: ${document.getElementById("owner-id-student").value}`;
+    }
+
+    const ok = await confirmAction({
+      title: "Log this membership?",
+      description:
+        ownerType === "family"
+          ? "Family-tier writes are atomic and need a live connection."
+          : undefined,
+      rows: [
+        ["Owner", ownerLabel],
+        ["Tier", tier],
+        ["Purchase date", formatDate(purchaseDate || new Date())],
+        ["Valid from", formatDate(validFrom)],
+        ["Valid until", formatDate(validUntil)],
+        ["Notes", notes || "—"],
+      ],
+      confirmLabel: "Save membership",
+    });
+    if (!ok) return;
+
+    btn.disabled = true;
+    btn.textContent = "Saving…";
     await logMembership({
       ownerType,
       ownerId,

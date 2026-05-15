@@ -93,6 +93,94 @@ function updateOfflineBanner() {
   el.hidden = navigator.onLine;
 }
 
+// Modal "preview + confirm" used before every admin CUD write. Renders a
+// dialog with a title, optional description, a key/value preview table,
+// and Confirm/Cancel buttons. Returns Promise<true|false>. Variant
+// "danger" colors the confirm button red for delete/dissolve flows.
+//
+// One shared dialog instance is created lazily and re-used across calls
+// (cheaper than creating/destroying on every confirm). Closing via Esc,
+// click-outside, or Cancel all resolve false.
+let confirmDialogInstance = null;
+function buildConfirmDialog() {
+  const dlg = document.createElement("dialog");
+  dlg.id = "confirm-dialog";
+  dlg.className = "modal modal-confirm";
+  dlg.innerHTML = `
+    <h2 class="confirm-title"></h2>
+    <p class="confirm-description card-sub" hidden></p>
+    <table class="confirm-rows"><tbody></tbody></table>
+    <div class="btn-row">
+      <button type="button" class="btn confirm-yes"></button>
+      <button type="button" class="btn btn-ghost confirm-no"></button>
+    </div>
+  `;
+  document.body.appendChild(dlg);
+  return dlg;
+}
+
+export function confirmAction({
+  title,
+  description = "",
+  rows = [],
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  variant = "default",
+}) {
+  if (!confirmDialogInstance) confirmDialogInstance = buildConfirmDialog();
+  const dlg = confirmDialogInstance;
+
+  dlg.querySelector(".confirm-title").textContent = title;
+  const desc = dlg.querySelector(".confirm-description");
+  desc.textContent = description;
+  desc.hidden = !description;
+
+  const tbody = dlg.querySelector(".confirm-rows tbody");
+  tbody.innerHTML = "";
+  for (const [label, value] of rows) {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = label;
+    const td = document.createElement("td");
+    td.textContent = value;
+    tr.appendChild(th);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+
+  const yes = dlg.querySelector(".confirm-yes");
+  const no = dlg.querySelector(".confirm-no");
+  yes.textContent = confirmLabel;
+  no.textContent = cancelLabel;
+  yes.classList.toggle("btn-danger", variant === "danger");
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (value) => {
+      if (settled) return;
+      settled = true;
+      dlg.close();
+      resolve(value);
+    };
+    yes.onclick = () => settle(true);
+    no.onclick = () => settle(false);
+    dlg.onclick = (ev) => {
+      const r = dlg.getBoundingClientRect();
+      if (
+        ev.clientY < r.top ||
+        ev.clientY > r.bottom ||
+        ev.clientX < r.left ||
+        ev.clientX > r.right
+      ) {
+        settle(false);
+      }
+    };
+    dlg.addEventListener("close", () => settle(false), { once: true });
+    dlg.showModal();
+    yes.focus();
+  });
+}
+
 export function showToast(msg, kind = "info") {
   let host = document.getElementById("toast-host");
   if (!host) {
