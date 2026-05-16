@@ -150,6 +150,32 @@ import {
       }
       if (!hours || hours <= 0) throw new Error("End time must be after start time.");
 
+      // Fetch the student's current balance for the chosen type so the
+      // confirm preview can show before/after numbers. If the fetch
+      // fails (offline, network), skip the rows rather than block the
+      // confirm — the write itself is offline-safe via addDoc queue.
+      const balanceRows = [];
+      try {
+        const [purchases, used] = await Promise.all([
+          listLessonPurchasesForStudent(studentId),
+          listLessonsUsedForStudent(studentId),
+        ]);
+        const bal = computeHoursBalance(purchases, used, type);
+        const after = bal.remaining - hours;
+        const typeLabel = type[0].toUpperCase() + type.slice(1);
+        balanceRows.push(
+          [`${typeLabel} balance now`, `${formatHoursForInput(bal.remaining)} h`],
+          [
+            "After this lesson",
+            after < 0
+              ? `${formatHoursForInput(after)} h — over balance!`
+              : `${formatHoursForInput(after)} h`,
+          ]
+        );
+      } catch {
+        // Best-effort — skip rows if we can't read.
+      }
+
       const ok = await confirmAction({
         title: "Log this lesson?",
         description: "This deducts hours from the student's balance.",
@@ -159,6 +185,7 @@ import {
           ["Time", `${startTime} – ${endTime}`],
           ["Type", type],
           ["Hours", String(hours)],
+          ...balanceRows,
           ["Coach", coachName || "—"],
           ["Notes", notes || "—"],
         ],
