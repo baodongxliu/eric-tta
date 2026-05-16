@@ -31,16 +31,42 @@ import {
   // Start/end time → hours derivation. The hours input is readonly and
   // gets its value from this computation; admin picks times, the number
   // appears automatically.
+  //
+  // Club hours: 10 AM (600 min) to 10 PM (1320 min). Earliest start is
+  // 10:00; latest start 9:30 PM leaves room for at least a 30-min lesson.
+  // Earliest end 10:30 AM mirrors the latest start.
   const startEl = document.getElementById("start-time");
   const endEl = document.getElementById("end-time");
   const hoursEl = document.getElementById("hours");
-  populateHalfHourOptions(startEl);
-  populateHalfHourOptions(endEl);
+  const START_MIN = 10 * 60;   // 10:00 AM
+  const START_MAX = 21 * 60 + 30; // 9:30 PM
+  const END_MIN = 10 * 60 + 30;  // 10:30 AM
+  const END_MAX = 22 * 60;      // 10:00 PM
+  populateHalfHourOptions(startEl, START_MIN, START_MAX);
+  populateHalfHourOptions(endEl, END_MIN, END_MAX);
+
   const recomputeHours = () => {
     const h = hoursFromTimes(startEl.value, endEl.value);
     hoursEl.value = h != null ? formatHoursForInput(h) : "";
   };
+  const setEndOneHourAfter = (startValue) => {
+    if (!startValue) {
+      endEl.value = "";
+      return;
+    }
+    const [sh, sm] = startValue.split(":").map(Number);
+    const desiredEndMin = Math.min(sh * 60 + sm + 60, END_MAX);
+    endEl.value = minutesToHHmm(desiredEndMin);
+  };
+
+  // Initial defaults: start = current local time rounded to the nearest
+  // half hour (clamped to club hours); end = start + 1 h (capped at close).
+  startEl.value = defaultStartTimeNow(START_MIN, START_MAX);
+  setEndOneHourAfter(startEl.value);
+  recomputeHours();
+
   startEl.addEventListener("change", () => {
+    setEndOneHourAfter(startEl.value);
     recomputeHours();
     checkBalanceSoon();
   });
@@ -141,9 +167,9 @@ import {
       showToast("Lesson saved.", "success");
       document.getElementById("form").reset();
       document.getElementById("date").value = todayInput();
-      startEl.value = "";
-      endEl.value = "";
-      hoursEl.value = "";
+      startEl.value = defaultStartTimeNow(START_MIN, START_MAX);
+      setEndOneHourAfter(startEl.value);
+      recomputeHours();
       checkBalance();
     } catch (e) {
       errEl.textContent = e.message || "Could not save.";
@@ -180,22 +206,38 @@ function isHalfHour(time) {
   return m === 0 || m === 30;
 }
 
-// Fill a <select> with all 48 half-hour times (00:00 through 23:30).
-// The option `value` is the 24-hour "HH:mm" string the rest of the
-// module already understands; the label is rendered in 12-hour AM/PM
-// form, which is what ETT admins read at a glance. A placeholder
-// option (value="") is preserved if the caller put one there.
-function populateHalfHourOptions(selectEl) {
+// Fill a <select> with half-hour times in the [minMinutes, maxMinutes]
+// range (both inclusive). Bounds are minutes since midnight; e.g.
+// 10*60=600 to 21*60+30=1290 covers 10:00 AM through 9:30 PM. Option
+// value stays in 24-hour "HH:mm"; label renders in 12-hour AM/PM.
+function populateHalfHourOptions(selectEl, minMinutes, maxMinutes) {
   for (let h = 0; h < 24; h++) {
     for (const m of [0, 30]) {
-      const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      const totalMin = h * 60 + m;
+      if (totalMin < minMinutes || totalMin > maxMinutes) continue;
       const period = h < 12 ? "AM" : "PM";
       const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
       const label = `${h12}:${String(m).padStart(2, "0")} ${period}`;
       const opt = document.createElement("option");
-      opt.value = value;
+      opt.value = minutesToHHmm(totalMin);
       opt.textContent = label;
       selectEl.appendChild(opt);
     }
   }
+}
+
+// Current local time → nearest half-hour, clamped to [min, max] in
+// minutes-since-midnight. Returns "HH:mm".
+function defaultStartTimeNow(minMinutes, maxMinutes) {
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const rounded = Math.round(minutes / 30) * 30;
+  const clamped = Math.max(minMinutes, Math.min(maxMinutes, rounded));
+  return minutesToHHmm(clamped);
+}
+
+function minutesToHHmm(totalMin) {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
