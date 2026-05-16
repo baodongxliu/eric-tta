@@ -43,11 +43,22 @@ import {
   const END_MIN = 10 * 60 + 30;  // 10:30 AM
   const END_MAX = 22 * 60;      // 10:00 PM
   populateHalfHourOptions(startEl, START_MIN, START_MAX);
-  populateHalfHourOptions(endEl, END_MIN, END_MAX);
 
   const recomputeHours = () => {
     const h = hoursFromTimes(startEl.value, endEl.value);
     hoursEl.value = h != null ? formatHoursForInput(h) : "";
+  };
+  // Rebuild end-time options to start at (start + 30 min) — anything ≤
+  // start makes no sense as an end time. Capped at END_MAX (10:00 PM).
+  const refreshEndOptions = (startValue) => {
+    endEl.innerHTML = "";
+    if (!startValue) {
+      populateHalfHourOptions(endEl, END_MIN, END_MAX);
+      return;
+    }
+    const [sh, sm] = startValue.split(":").map(Number);
+    const lower = Math.max(END_MIN, sh * 60 + sm + 30);
+    populateHalfHourOptions(endEl, lower, END_MAX);
   };
   const setEndOneHourAfter = (startValue) => {
     if (!startValue) {
@@ -62,10 +73,12 @@ import {
   // Initial defaults: start = current local time rounded to the nearest
   // half hour (clamped to club hours); end = start + 1 h (capped at close).
   startEl.value = defaultStartTimeNow(START_MIN, START_MAX);
+  refreshEndOptions(startEl.value);
   setEndOneHourAfter(startEl.value);
   recomputeHours();
 
   startEl.addEventListener("change", () => {
+    refreshEndOptions(startEl.value);
     setEndOneHourAfter(startEl.value);
     recomputeHours();
     checkBalanceSoon();
@@ -168,6 +181,7 @@ import {
       document.getElementById("form").reset();
       document.getElementById("date").value = todayInput();
       startEl.value = defaultStartTimeNow(START_MIN, START_MAX);
+      refreshEndOptions(startEl.value);
       setEndOneHourAfter(startEl.value);
       recomputeHours();
       checkBalance();
