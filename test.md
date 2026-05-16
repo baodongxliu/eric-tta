@@ -218,10 +218,30 @@ you're switching between the two as labeled.
     from step 20 appears in Alice's history (auto-synced via the
     realtime listener).
 
-### F. Delete affordance
+### F. Delete + Edit affordance
 
 23. **[admin]** Admin dashboard → **Recent activity** → **Delete** on
-    any row → confirm. Row disappears; realtime listener auto-refreshes.
+    any row → confirm-and-preview modal pops up → confirm. Row
+    disappears; realtime listener auto-refreshes.
+24. **[admin]** Same table → **Edit** on a lesson row → modal opens
+    pre-filled with the current values. Change Coach from "Eric" to
+    "Anna" → Save → diff-only confirm shows just `Coach: Eric → Anna`
+    → confirm. Row updates in place.
+
+### F2. Time-based lesson logging
+
+25. **[admin]** **Log lesson** form → Start time and End time are
+    `<select>` dropdowns with half-hour options (10 AM – 10 PM).
+    Start defaults to ~now (rounded); end defaults to start + 1 h.
+    Picking a different start updates end automatically and rebuilds
+    the end dropdown to drop any time ≤ start. Hours is read-only.
+
+### F3. Confirm previews
+
+26. **[admin]** Submit any of the three log forms. A modal pops up
+    with the exact field values you're about to commit (including
+    the student's before/after balance for `Log lesson`). Cancel
+    leaves the form open; Confirm proceeds with the write.
 
 ### G-pre. Google sign-in (only if you enabled it in Phase 2)
 
